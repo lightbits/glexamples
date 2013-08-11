@@ -65,8 +65,12 @@ const GLushort indexData[] = {
 GLuint vbo, vao, ibo;
 GLuint program;
 GLuint vsShader, fsShader;
-GLuint attribPosition, attribColor;
-GLuint uniformModel, uniformView, uniformProjection;
+
+// note that these are signed integers. this is because OpenGL uses
+// the value -1 for attribs/uniforms that don't exist (either due to optimization or
+// because they simple don't exist in the source)
+GLint attribPosition, attribColor;
+GLint uniformModel, uniformView, uniformProjection;
 
 void initProgram()
 {
@@ -97,12 +101,12 @@ void initBuffers()
 	// create vertex buffer object to hold the vertex data
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, 6 * 4 * 7 * sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
 
 	// create index buffer object to hold the index data
 	glGenBuffers(1, &ibo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(GLushort), indexData, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexData), indexData, GL_STATIC_DRAW);
 
 	// enable and specify vertex format
 	glEnableVertexAttribArray(attribPosition);
@@ -126,14 +130,11 @@ void render(double time)
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-
-	mat4 model = mat4(1.0f);
-	mat4 view = translate(0.0f, 0.0f, -3.0f) * rotateX(time * 2.0f) * rotateY(time);
-	mat4 projection = perspective(45.0f, 640.0f / 480.0f, 0.1f, 10.0f);
-
-	glUniform(uniformModel, model);
-	glUniform(uniformView, view);
-	glUniform(uniformProjection, projection);
+	
+	// set transformations uniforms
+	glUniform(uniformModel, rotateX(time * 2.0f) * rotateY(time));
+	glUniform(uniformView, translate(0.0f, 0.0f, -3.0f));
+	glUniform(uniformProjection, perspective(45.0f, 640.0f / 480.0f, 0.1f, 10.0f));
 
 	// draw 6 * 6 elements, starting at the 0th element in the ibo
 	glDrawElements(GL_TRIANGLES, 6 * 6, GL_UNSIGNED_SHORT, 0);
@@ -151,7 +152,7 @@ int main()
 	int width = 640;
 	int height = 480;
 
-	if(!initGL("Vertex Buffer Objects", width, height, 24, 8, 4))
+	if(!initGL("Vertex Buffer Objects", width, height, 3, 1, 24, 8, 4, false))
 		exit(EXIT_FAILURE);
 
 	initProgram();
@@ -191,6 +192,13 @@ int main()
 			glfwSleep(targetFrameTime - renderTime);
 	}
 
+	glDeleteShader(vsShader);
+	glDeleteShader(fsShader);
+	glDeleteProgram(program);
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &vao);
+	glDeleteBuffers(1, &ibo);
+	glDeleteVertexArrays(1, &vao);
 	glfwTerminate();
 	return EXIT_SUCCESS;
 }

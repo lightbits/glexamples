@@ -1,4 +1,5 @@
 #include "glutils.h"
+#include <memory>
 #include <vector>
 #include <iostream>
 
@@ -20,29 +21,32 @@ bool readFile(const char *filename, std::string &dest)
 	return true;
 }
 
-bool initGL(const char *title, int width, int height, int depth, int stencil, int fsaa)
+bool initGL(const char *title, int width, int height, int major, int minor,
+int depth, int stencil, int fsaa, bool fullscreen)
 {
 	if(glfwInit() != GL_TRUE)
 		return false;
 
-	// Profiles were first introduced in GL 3.2, but we are running 3.1.
-	//glfwOpenWindowHint(GLFW_OPENGL_PROFILE,			0);	// 0 lets the system choose the profile
-	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR,	3);
-	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR,	1);
-	glfwOpenWindowHint(GLFW_FSAA_SAMPLES,			fsaa);
-	glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE,		GL_TRUE);
+	// Note that profiles were first introduced in GL 3.2,
+	glfwOpenWindowHint(GLFW_OPENGL_PROFILE, 0);	// 0 = auto
+	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, major);
+	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, minor);
+	glfwOpenWindowHint(GLFW_FSAA_SAMPLES, fsaa);
+	glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, GL_TRUE);
 
-	if(glfwOpenWindow(width, height, 0, 0, 0, 0, depth, stencil, GLFW_WINDOW) != GL_TRUE)
+	if(glfwOpenWindow(width, height, 0, 0, 0, 0, depth, stencil, 
+		fullscreen ? GLFW_FULLSCREEN : GLFW_WINDOW) != GL_TRUE)
 		return false;
 
 	glfwSetWindowTitle(title);
+	glfwSwapInterval(1); // vsync (experimental)
 
 	// Note that this function fails if no GL context has been made current
 	if(glload::LoadFunctions() == glload::LS_LOAD_FAILED)
 		return false;
 	
-	std::cout<<"Debug context: "	<<(glfwGetWindowParam(GLFW_OPENGL_DEBUG_CONTEXT) ? "true" : "false")<<std::endl;
-	std::cout<<"HW accelerated: "	<<(glfwGetWindowParam(GLFW_ACCELERATED) ? "true" : "false")<<std::endl;
+	std::cout<<"Debug context: "	<<(glfwGetWindowParam(GLFW_OPENGL_DEBUG_CONTEXT) ? "yes" : "no")<<std::endl;
+	std::cout<<"HW accelerated: "	<<(glfwGetWindowParam(GLFW_ACCELERATED) ? "yes" : "no")<<std::endl;
 	std::cout<<"Depth bits: "		<<glfwGetWindowParam(GLFW_DEPTH_BITS)<<std::endl;
 	std::cout<<"Stencil bits: "		<<glfwGetWindowParam(GLFW_STENCIL_BITS)<<std::endl;
 	std::cout<<"FSAA samples: "		<<glfwGetWindowParam(GLFW_FSAA_SAMPLES)<<std::endl;
@@ -103,6 +107,40 @@ GLuint getProgram(GLuint vertexShader, GLuint fragmentShader, GLuint geometrySha
 	}
 
 	return program;
+}
+
+bool loadTexture(GLuint &texture, const std::string &filename)
+{
+	try
+	{
+		// Allocate memory for images (deletes itself when no longer used)
+		std::unique_ptr<glimg::ImageSet> imgset(glimg::loaders::stb::LoadFromFile(filename));
+		texture = glimg::CreateTexture(imgset.get(), 0);
+	}
+	catch(glimg::loaders::stb::StbLoaderException &e)
+	{
+		texture = 0;
+		std::cerr<<"Failure loading texture: "<<e.what()<<"("<<filename<<")"<<std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool loadTexture(GLuint &texture, const std::string &filename, GLenum target,
+GLenum minFilter, GLenum magFilter, GLenum wrapS, GLenum wrapT)
+{
+	if(!loadTexture(texture, filename))
+		return false;
+
+	glBindTexture(target, texture);
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, minFilter);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, magFilter);
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, wrapS);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, wrapT);
+	glBindTexture(target, 0);
+
+	return true;
 }
 
 GLuint createTexture2d(GLsizei width, GLsizei height, const void *data, GLenum dataType, GLenum format)

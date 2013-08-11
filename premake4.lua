@@ -17,6 +17,8 @@ solution "glexamples"
 		-- ensure that paths are correct here!
 		includedirs "../../glsdk/glfw/include"
 		libdirs "../../glsdk/glfw/library"
+		includedirs "../../glsdk/glimg/include"
+		libdirs "../../glsdk/glimg/lib"
 		includedirs "../../glsdk/glload/include"
 		libdirs "../../glsdk/glload/lib"
 		includedirs "../../glsdk/glm"
@@ -29,9 +31,9 @@ solution "glexamples"
 			targetsuffix "D"
 			defines "_DEBUG"
 			flags "Symbols"
-			links {"glfwD", "glloadD"}
+			links {"glfwD", "glloadD", "glimgD"}
 			
 		configuration "Release"
 			defines "NDEBUG"
 			flags {"OptimizeSpeed", "NoFramePointer", "ExtraWarnings", "NoEditAndContinue"}
-			links {"glfw", "glload"}
+			links {"glfw", "glload", "glimg"}

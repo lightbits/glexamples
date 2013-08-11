@@ -1,3 +1,11 @@
+/* 
+OpenGL examples - GLutils
+
+Functions that make life a little easier.
+Among them, context initialization, compilation/linking of shaders/programs,
+glUniform overloads, and simple matrix transformations
+*/
+
 #ifndef GL_UTILS_H
 #define GL_UTILS_H
 #include <glload/gl_3_1_comp.h>			// OpenGL version 3.1, compatability profile
@@ -6,6 +14,7 @@
 #include <glm/glm.hpp>					// OpenGL mathematics
 #include <glm/gtc/type_ptr.hpp>			// for value_ptr(matrix)
 #include <glm/gtc/matrix_transform.hpp> // for glm::ortho and glm::perspective
+#include <glimg/glimg.h>				// for loadTexture
 #include <fstream>						// for readFile
 #include <string>
 
@@ -30,8 +39,9 @@ static const char *getErrorMessage(GLenum code)
 	return false otherwise */
 bool readFile(const char *filename, std::string &dest);
 
-/* initialize an OpenGL context */
-bool initGL(const char *title, int width, int height, int depth = 24, int stencil = 8, int fsaa = 0);
+/* initialize OpenGL context and load GL functions */
+bool initGL(const char *title, int width, int height, int major = 3, int minor = 1,
+int depth = 24, int stencil = 8, int fsaa = 0, bool fullscreen = false);
 
 /* compile a shader object of the given shaderType from the shaderSrc.
 	return the shader if compilation was successful.
@@ -42,6 +52,17 @@ GLuint getShader(GLenum shaderType, const std::string &shaderSrc);
 	return the program if link was successful.
 	return 0 otherwise */
 GLuint getProgram(GLuint vertexShader, GLuint fragmentShader, GLuint geometryShader = 0);
+
+/* load a texture into the texture object.
+	return true if successful.
+	return false otherwise */
+bool loadTexture(GLuint &texture, const std::string &filename);
+
+/* load a texture into the texture object and apply the texture parameters.
+	return true if successful.
+	return false otherwise */
+bool loadTexture(GLuint &texture, const std::string &filename, GLenum target,
+GLenum minFilter, GLenum magFilter, GLenum wrapS, GLenum wrapT);
 
 /* create a 2D texture from the pixel data of format format. The same format will be used in
 	the internal texture object. Note that the width and height must be powers of two.
