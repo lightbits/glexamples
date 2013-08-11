@@ -15,8 +15,8 @@ solution "glexamples"
 		files {"**.cpp", "**.h"} -- recursively add files
 
 		-- ensure that paths are correct here!
-		includedirs "../../glsdk/glfw3/include"
-		libdirs "../../glsdk/glfw3/library"
+		includedirs "../../glsdk/glfw/include"
+		libdirs "../../glsdk/glfw/library"
 		includedirs "../../glsdk/glload/include"
 		libdirs "../../glsdk/glload/lib"
 		includedirs "../../glsdk/glm"
@@ -29,7 +29,7 @@ solution "glexamples"
 			targetsuffix "D"
 			defines "_DEBUG"
 			flags "Symbols"
-			links {"glfw", "glloadD"}
+			links {"glfwD", "glloadD"}
 			
 		configuration "Release"
 			defines "NDEBUG"

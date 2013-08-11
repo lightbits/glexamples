@@ -7,7 +7,7 @@ author: Simen Haugo
 
 #include <glload/gl_3_1_comp.h>			// OpenGL version 3.1, compatability profile
 #include <glload/gll.hpp>				// C-style loading interface
-#include <GLFW/glfw3.h>
+#include <GL/glfw.h>
 
 #include <glm/glm.hpp>					// OpenGL mathematics
 #include <glm/gtc/type_ptr.hpp>			// for value_ptr(matrix)
@@ -19,36 +19,39 @@ int main()
 {
 	int width = 640;
 	int height = 480;
-	GLFWwindow *window;
 	
 	if(!glfwInit())
 		exit(EXIT_FAILURE);
 
-	GLFWwindow *window;
-	window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
-	if(!window)
+	glfwOpenWindowHint(GLFW_OPENGL_PROFILE,	0);	// 0 lets the system choose the profile
+	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
+	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 1);
+	glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, GL_TRUE);
+
+	if(glfwOpenWindow(width, height, 0, 0, 0, 0, 0, 0, GLFW_WINDOW) != GL_TRUE)
 	{
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
 
-	glfwMakeContextCurrent(window);
+	glfwSetWindowTitle("Hello World");
 
 	// Note that this fails if no GL context has been made current
 	if(glload::LoadFunctions() == glload::LS_LOAD_FAILED)
 		return false;
 	
-	while(!glfwWindowShouldClose(window))
+	int running = GL_TRUE;
+	while(running)
 	{
+		running = glfwGetWindowParam(GLFW_OPENED);
 		double time = glfwGetTime();
 		if(time > 3.0)
-			glfwSetWindowShouldClose(window, true);
+			running = false;
 
-		glfwSwapBuffers(window);
+		glfwSwapBuffers();
 		glfwPollEvents();
 	}
 
-	glfwDestroyWindow(window);
 	glfwTerminate();
 	return EXIT_SUCCESS;
 }
