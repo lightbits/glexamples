@@ -1,125 +1,149 @@
-/* OpenGL examples - Vertex Buffer Object
+/* 
+OpenGL examples - Vertex Buffer Object
 
 setup and usage of vbo/vao with shaders
-
-author: Simen Haugo
 */
 
-#include <glload/gl_3_1_comp.h>			// OpenGL version 3.1, compatability profile
-#include <glload/gll.hpp>				// C-style loading interface
-#include <GL/glfw.h>
-
-#include <glm/glm.hpp>					// OpenGL mathematics
-#include <glm/gtc/type_ptr.hpp>			// for value_ptr(matrix)
-#include <glm/gtc/matrix_transform.hpp> // for transformations like glm::ortho and glm::perspective
+#include "glutils.h"
 
 #include <iostream>
 #include <vector>
+using namespace glm;
 
-const char *getErrorMessage(GLenum code)
+#define RED 1.0f, 0.4f, 0.4f, 1.0f
+#define GREEN 0.4f, 1.0f, 0.4f, 1.0f
+#define BLUE 0.4f, 0.4f, 1.0f, 1.0f
+#define PURPLE 1.0f, 0.4f, 1.0f, 1.0f
+#define ORANGE 1.0f, 1.0f, 0.4f, 1.0f
+const GLfloat vertexData[] = {
+	// Front
+	-0.5f, -0.5f,  0.5f, RED,
+	-0.5f,  0.5f,  0.5f, RED,
+	0.5f,  0.5f,  0.5f, RED,
+	0.5f, -0.5f,  0.5f, RED,
+
+		// Back
+	-0.5f, -0.5f, -0.5f, GREEN,
+	0.5f, -0.5f, -0.5f, GREEN,
+	0.5f,  0.5f, -0.5f, GREEN,
+	-0.5f,  0.5f, -0.5f, GREEN,
+
+	// Bottom
+	-0.5f, -0.5f,  0.5f, PURPLE,
+	0.5f, -0.5f,  0.5f, PURPLE,
+	0.5f, -0.5f, -0.5f, PURPLE,
+	-0.5f, -0.5f, -0.5f, PURPLE,
+
+	// Top
+	-0.5f,  0.5f,  0.5f, ORANGE,
+	-0.5f,  0.5f, -0.5f, ORANGE,
+	0.5f,  0.5f, -0.5f, ORANGE,
+	0.5f,  0.5f,  0.5f, ORANGE,
+
+		// Left
+	-0.5f, -0.5f, -0.5f, BLUE,
+	-0.5f,  0.5f, -0.5f, BLUE,
+	-0.5f,  0.5f,  0.5f, BLUE,
+	-0.5f, -0.5f,  0.5f, BLUE,
+
+	// Right
+	0.5f, -0.5f,  0.5f, BLUE,
+	0.5f,  0.5f,  0.5f, BLUE,
+	0.5f,  0.5f, -0.5f, BLUE,
+	0.5f, -0.5f, -0.5f, BLUE
+};
+
+const GLushort indexData[] = {
+	0, 1, 2, 2, 3, 0,
+	4, 5, 6, 6, 7, 4,
+	8, 9, 10, 10, 11, 8,
+	12, 13, 14, 14, 15, 12,
+	16, 17, 18, 18, 19, 16,
+	20, 21, 22, 22, 23, 20
+};
+
+GLuint vbo, vao, ibo;
+GLuint program;
+GLuint vsShader, fsShader;
+GLuint attribPosition, attribColor;
+GLuint uniformModel, uniformView, uniformProjection;
+
+void initProgram()
 {
-	switch(code)
-	{
-	case 0: return "NO_ERROR";
-	case 0x0500: return "INVALID_ENUM";
-	case 0x0501: return "INVALID_VALUE";
-	case 0x0502: return "INVALID_OPERATION";
-	case 0x0503: return "STACK_OVERFLOW";
-	case 0x0504: return "STACK_UNDERFLOW";
-	case 0x0505: return "OUT_OF_MEMORY";
-	case 0x0506: return "INVALID_FRAMEBUFFER_OPERATION";
-	default: return "UNKNOWN";
-	}
+	// load shader src
+	std::string vsSrc, fsSrc;
+	if(!readFile("data/simple.vs", vsSrc) ||
+		!readFile("data/simple.fs", fsSrc))
+		std::cerr<<"Failure reading shader data"<<std::endl;
+
+	// compile shaders and link program
+	vsShader = getShader(GL_VERTEX_SHADER, vsSrc);
+	fsShader = getShader(GL_FRAGMENT_SHADER, fsSrc);
+	program = getProgram(vsShader, fsShader);
+
+	// get attrib/uniform locations
+	attribPosition = glGetAttribLocation(program, "position");
+	attribColor = glGetAttribLocation(program, "color");
+	uniformModel = glGetUniformLocation(program, "model");
+	uniformView = glGetUniformLocation(program, "view");
+	uniformProjection = glGetUniformLocation(program, "projection");
 }
 
-bool init(int width, int height, const char *title)
-{	
-	if(!glfwInit())
-	{
-		std::cerr<<"failed to initialize GLFW"<<std::endl;
-		return false;
-	}
+void initBuffers()
+{
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
 
-	glfwOpenWindowHint(GLFW_OPENGL_PROFILE,	0);	// 0 lets the system choose the profile
-	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 3);
-	glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 1);
-	glfwOpenWindowHint(GLFW_WINDOW_NO_RESIZE, GL_TRUE);
+	// create vertex buffer object to hold the vertex data
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, 6 * 4 * 7 * sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
 
-	// open window with default color bits, 24 depth bits and 8 stencil bits
-	if(glfwOpenWindow(width, height, 0, 0, 0, 0, 24, 8, GLFW_WINDOW) != GL_TRUE)
-	{
-		std::cerr<<"failed to open window"<<std::endl;
-		glfwTerminate();
-		return false;
-	}
+	// create index buffer object to hold the index data
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(GLushort), indexData, GL_STATIC_DRAW);
 
-	glfwSetWindowTitle(title);
+	// enable and specify vertex format
+	glEnableVertexAttribArray(attribPosition);
+	glEnableVertexAttribArray(attribColor);
+	glVertexAttribPointer(attribPosition, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void*)(0));
+	glVertexAttribPointer(attribColor, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
 
-	// Note that this fails if no GL context has been made current
-	if(glload::LoadFunctions() == glload::LS_LOAD_FAILED)
-	{
-		std::cerr<<"failed to initialize glload"<<std::endl;
-		return false;
-	}
+	// "unbind" vao
+	glBindVertexArray(0);
 
-	std::cout<<"Running OpenGL ";
-	std::cout<<glfwGetWindowParam(GLFW_OPENGL_VERSION_MAJOR)<<".";
-	std::cout<<glfwGetWindowParam(GLFW_OPENGL_VERSION_MINOR)<<std::endl;
-	std::cout<<"Vendor: "<<glGetString(GL_VENDOR)<<std::endl;
-	std::cout<<"Renderer: "<<glGetString(GL_RENDERER)<<std::endl;
-	std::cout<<"Version: "<<glGetString(GL_VERSION)<<std::endl;
-	std::cout<<"GLSL: "<<glGetString(GL_SHADING_LANGUAGE_VERSION)<<std::endl;
-
-	return true;
+	// "unbind" buffers
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-bool compileShader(GLuint &shader, GLenum shaderType, const char *src)
+void render(double time)
 {
-	shader = glCreateShader(shaderType);
-	glShaderSource(shader, 1, &src, NULL);
-	glCompileShader(shader);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// check for errors
-	GLint status;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-	if(status == GL_FALSE)
-	{
-		GLint length;
-		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-		std::vector<GLchar> log(length);
-		glGetShaderInfoLog(shader, length, NULL, &log[0]);
-		std::cerr<<&log[0]<<std::endl;
-	}
+	glUseProgram(program);
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
-	return status == GL_TRUE;
-}
+	mat4 model = mat4(1.0f);
+	mat4 view = translate(0.0f, 0.0f, -3.0f) * rotateX(time * 2.0f) * rotateY(time);
+	mat4 projection = perspective(45.0f, 640.0f / 480.0f, 0.1f, 10.0f);
 
-bool createProgram(GLuint &program, GLuint vertexShader, GLuint fragmentShader, GLuint geometryShader)
-{
-	program = glCreateProgram();
+	glUniform(uniformModel, model);
+	glUniform(uniformView, view);
+	glUniform(uniformProjection, projection);
 
-	glAttachShader(program, vertexShader);
-	glAttachShader(program, fragmentShader);
-	if(geometryShader != 0) glAttachShader(program, geometryShader);
+	// draw 6 * 6 elements, starting at the 0th element in the ibo
+	glDrawElements(GL_TRIANGLES, 6 * 6, GL_UNSIGNED_SHORT, 0);
 
-	glLinkProgram(program);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glUseProgram(0);
 
-	glDetachShader(program, vertexShader);
-	glDetachShader(program, fragmentShader);
-	if(geometryShader != 0) glDetachShader(program, geometryShader);
-
-	GLint status;
-	glGetProgramiv(program, GL_LINK_STATUS, &status);
-	if(status == GL_FALSE)
-	{
-		GLint length;
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
-		std::vector<GLchar> log(length);
-		glGetProgramInfoLog(program, length, NULL, &log[0]);
-		std::cerr<<&log[0]<<std::endl;
-	}
-
-	return status == GL_TRUE;
+	glfwSwapBuffers();
 }
 
 int main()
@@ -127,40 +151,46 @@ int main()
 	int width = 640;
 	int height = 480;
 
-	if(!init(width, height, "Vertex Buffer Objects"))
+	if(!initGL("Vertex Buffer Objects", width, height, 24, 8, 4))
 		exit(EXIT_FAILURE);
 
-	GLuint vbo, vao;
-	GLuint program;
+	initProgram();
+	initBuffers();
 
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glClearDepth(1.0f);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
+	glDepthRange(0.0f, 1.0f);
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
+	glCullFace(GL_BACK);
 
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	//glBufferData(GL_ARRAY_BUFFER
-	
-	int running = GL_TRUE;
-	while(running)
+	double targetFrameTime = 0.013; // 13ms
+	while(glfwGetWindowParam(GLFW_OPENED))
 	{
-		running = glfwGetWindowParam(GLFW_OPENED);
-
-		// close on escape
+		double time = glfwGetTime();
 		if(glfwGetKey(GLFW_KEY_ESC))
-			running = GL_FALSE;
+			glfwCloseWindow();
+		
+		double renderStart = glfwGetTime();
+		render(time);
+		double renderTime = glfwGetTime() - renderStart;
 
 		// check for errors
 		GLenum error = glGetError();
 		if(error != GL_NO_ERROR)
 		{
 			std::cerr<<getErrorMessage(error)<<std::endl;
-			running = GL_FALSE;
+			glfwCloseWindow();
 		}
-
-		glfwSwapBuffers();
+		
+		// a sort of framerate stabilizer
+		if(renderTime < targetFrameTime)
+			glfwSleep(targetFrameTime - renderTime);
 	}
 
-	glfwCloseWindow();
 	glfwTerminate();
 	return EXIT_SUCCESS;
 }
