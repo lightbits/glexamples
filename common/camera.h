@@ -14,7 +14,7 @@ determined by the horizontal and vertical angles, theta and phi.
 
 #ifndef CAMERA_H
 #define CAMERA_H
-#include <src/glutils.h>
+#include "common/glutils.h"
 
 class Camera
 {

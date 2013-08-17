@@ -4,7 +4,7 @@ OpenGL examples - Vertex Buffer Object
 setup and usage of vbo/vao with shaders
 */
 
-#include "glutils.h"
+#include "common/glutils.h"
 
 #include <iostream>
 #include <vector>

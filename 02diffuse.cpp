@@ -4,7 +4,7 @@ OpenGL examples - Diffuse
 Diffuse lighting shader
 */
 
-#include "glutils.h"
+#include "common/glutils.h"
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -33,6 +33,7 @@ vec4 ambient = vec4(0.2f, 0.2f, 0.38f, 1.0f);
 
 bool loadTextures()
 {
+	// create 4x4 checkerboard rgba texture
 	int width = 4;
 	int height = 4;
 	GLubyte *pixels = new GLubyte[width * height * 4];
@@ -47,10 +48,6 @@ bool loadTextures()
 			pixels[4 * (y * width + x) + 3] = s;
 		}
 	}
-	pixels[0] = 0; pixels[1] = 0; pixels[2] = 0; pixels[3] = 255;
-	pixels[4] = 255; pixels[5] = 255; pixels[6] = 255; pixels[7] = 255;
-	pixels[8] = 0; pixels[9] = 0; pixels[10] = 0; pixels[11] = 255;
-	pixels[12] = 255; pixels[13] = 255; pixels[14] = 255; pixels[15] = 255;
 
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -71,7 +68,7 @@ void initProgram()
 	std::string vsSrc, fsSrc;
 	if(!readFile("data/diffuse.vs", vsSrc) ||
 		!readFile("data/diffuse.fs", fsSrc))
-		std::cerr << "Failure reading shader data" << std::endl;
+		std::cerr<<"Failure reading shader data"<<std::endl;
 
 	vsShader = getShader(GL_VERTEX_SHADER, vsSrc);
 	fsShader = getShader(GL_FRAGMENT_SHADER, fsSrc);
@@ -95,8 +92,8 @@ void initBuffers()
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
+	// a cube (x,y,z,n,n,n,u,v)
 	const GLfloat vertices[] = {
-		// xyz nnn uv
 		// Front
 		-0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
 		-0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
@@ -217,7 +214,7 @@ int main()
 	int width = 640;
 	int height = 480;
 
-	if(!initGL("Vertex Buffer Objects", width, height, 3, 1, 24, 8, 4, false))
+	if(!initGL("Diffuse Shading", width, height, 3, 1, 24, 8, 4, false))
 		exit(EXIT_FAILURE);
 
 	loadTextures();
@@ -226,10 +223,11 @@ int main()
 
 	glClearColor(0.55f, 0.59f, 0.95f, 1.0f);
 	glClearDepth(1.0f);
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LEQUAL);
-	glDepthRange(0.0f, 1.0f);
+	glDepthRange(0.0f, 1.0f); // depth values are clamped to [0, 1] anyway, so this will fully utilize the depth buffer
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
 	glCullFace(GL_BACK);
@@ -244,7 +242,6 @@ int main()
 		
 		render();
 
-		// check for errors
 		GLenum error = glGetError();
 		if(error != GL_NO_ERROR)
 		{
@@ -253,7 +250,7 @@ int main()
 			glfwCloseWindow();
 		}
 		
-		// a sort of framerate stabilizer
+		// let cpu get some sleep
 		glfwSleep(0.013);
 	}
 

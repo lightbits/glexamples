@@ -1,4 +1,4 @@
-#include <src/camera.h>
+#include "common/glutils.h"
 using namespace glm;
 
 Camera::Camera() : theta(0), phi(0), position(0, 0, -1)
