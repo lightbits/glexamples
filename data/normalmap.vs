@@ -13,10 +13,7 @@ uniform mat4 projection;
 
 out vec2 vertTexel;
 out vec4 tangentLightDir; // interpolate across vertices
-
-out vec3 vertTangent;
-out vec3 vertBitangent;
-out vec3 vertNormal;
+out vec4 worldNormal;
 
 void main()
 {
@@ -36,7 +33,5 @@ void main()
 		vec4(0, 0, 0, 1)));
 	tangentLightDir = TBN * viewDirToLight;
 
-	vertTangent = tangent;
-	vertBitangent = bitangent;
-	vertNormal = normal;
+	worldNormal = model * vec4(normal, 0.0);
 }

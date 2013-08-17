@@ -216,23 +216,9 @@ void update(double time)
 	double dt = time - time0;
 
 	model = rotateY(sinf(time * 0.5f));
-	//lightPos.x = sinf(time * 2.0f);
-	//lightPos.z = cosf(time * 3.0f);
-
-	if(glfwGetKey('A'))
-		lightPos.x -= 2.0f * dt;
-	else if(glfwGetKey('D'))
-		lightPos.x += 2.0f * dt;
-
-	if(glfwGetKey('W'))
-		lightPos.z -= 2.0f * dt;
-	else if(glfwGetKey('S'))
-		lightPos.z += 2.0f * dt;
-
-	if(glfwGetKey('Z'))
-		lightPos.y -= 2.0f * dt;
-	else if(glfwGetKey('X'))
-		lightPos.y += 2.0f * dt;
+	lightPos.x = sinf(time * 2.0f);
+	lightPos.z = cosf(time * 3.0f);
+	lightPos.y = 0.8f + 0.2f * sinf(time * 0.5f);
 
 	time0 = time;
 }

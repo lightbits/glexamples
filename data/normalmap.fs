@@ -2,10 +2,7 @@
 
 in vec2 vertTexel;
 in vec4 tangentLightDir;
-
-in vec3 vertNormal;
-in vec3 vertTangent;
-in vec3 vertBitangent;
+in vec4 worldNormal;
 
 uniform sampler2D texBaseImage;
 uniform sampler2D texNormalMap;
@@ -25,5 +22,5 @@ void main()
 	normal.w = 0.0;
 
 	float intensity = max(0.0, dot(normal, normalize(tangentLightDir)));
-	outColor = baseColor * (intensity * lightColor + (1.0 - intensity) * ambient);
+	outColor = (worldNormal * 0.5 + 0.5) * baseColor * (intensity * lightColor + (1.0 - intensity) * ambient);
 }
