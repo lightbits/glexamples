@@ -53,6 +53,16 @@ GLuint getShader(GLenum shaderType, const std::string &shaderSrc);
 	return 0 otherwise */
 GLuint getProgram(GLuint vertexShader, GLuint fragmentShader, GLuint geometryShader = 0);
 
+/* checks if any errors occured during linking
+	return true if link was successful
+	return false if an error occured */
+bool checkProgramLinkStatus(GLuint program);
+
+/* checks if any errors occured during compilation
+	return true if compilation was successful
+	return false if an error occured */
+bool checkShaderCompileStatus(GLuint shader);
+
 /* load a texture into the texture object.
 	return true if successful.
 	return false otherwise */

@@ -109,6 +109,40 @@ GLuint getProgram(GLuint vertexShader, GLuint fragmentShader, GLuint geometrySha
 	return program;
 }
 
+bool checkProgramLinkStatus(GLuint program)
+{
+	GLint status;
+	glGetProgramiv(program, GL_LINK_STATUS, &status);
+	if(status == GL_FALSE)
+	{
+		GLint length;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+		std::vector<GLchar> log(length);
+		glGetProgramInfoLog(program, length, NULL, &log[0]);
+		std::cerr<<"Linker failure: "<<std::endl<<&log[0]<<std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool checkShaderCompileStatus(GLuint shader)
+{
+	GLint status;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+	if(status == GL_FALSE)
+	{
+		GLint length;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+		std::vector<GLchar> log(length);
+		glGetShaderInfoLog(shader, length, NULL, &log[0]);
+		std::cerr<<"Compile failure: "<<&log[0]<<std::endl;
+		return false;
+	}
+
+	return true;
+}
+
 bool loadTexture(GLuint &texture, const std::string &filename)
 {
 	try
