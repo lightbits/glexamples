@@ -35,8 +35,18 @@ float surfaceFunction(float x, float y, float z)
 	y = p.y;
 	z = p.z;*/
 
+	// Nordstrand's weird surface
+	return 25.0f * (pow(x,3.0f)*(y+z) + pow(y,3.0f)*(x+z) + pow(z,3.0f)*(x+y)) +
+        50.0f * (x*x*y*y + x*x*z*z + y*y*z*z) -
+        125.0f * (x*x*y*z + y*y*x*z+z*z*x*y) +
+        60.0f*x*y*z -
+        4.0f*(x*y+x*z+y*z);
+
+	//return x*x*x*x + y*y*y*y + z*z*z*z - 1.4f * (x*x + y*y + z*z) + 0.55f;
+
 	//return x * x + y * y + z * z - 1.0f;
-	return x*x*x*x + y*y*y*y + z*z*z*z - 1.0f;
+	//return y - x*x - z*z;
+	//return x*x*x*x*x*x + y*y*y*y*y*y + z*z*z*z*z*z - 1.0f;
 }
 
 // Appends a clockwise oriented quad to the list of positions and indices
@@ -58,7 +68,7 @@ std::vector<vec3> &positions, std::vector<GLushort> &indices)
 
 void polygonizeSurface(std::vector<vec3> &positions, std::vector<GLushort> &indices)
 {
-	int gridResolution = 48;
+	int gridResolution = 128;
 	float epsilon = 0.3f;
 	float min = -1.5f;
 	float max = 1.5f;
@@ -276,7 +286,7 @@ int main()
 	glFrontFace(GL_CW);
 	glCullFace(GL_BACK);*/
 
-	glClearColor(0.73f, 0.73f, 0.73f, 0.73f);
+	glClearColor(1.0f, 1.0f, 1.0f, 0.73f);
 
 	while(glfwGetWindowParam(GLFW_OPENED))
 	{

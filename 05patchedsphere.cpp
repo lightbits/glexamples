@@ -44,7 +44,7 @@ void generateSphereNormal(std::vector<vec3> &positions, std::vector<GLushort> &i
 	static const float PI = 3.1415926535f;
 	static const float TWO_PI = 6.2831853071f;
 	float r = 2.0f;
-	float step = PI / 24.0f;
+	float step = PI / 8.0f;
 	for(float theta = 0.0f; theta <= TWO_PI - step * 0.95f; theta += step)
 	{
 		for(float phi = 0.0f; phi <= PI - step * 0.95f; phi += step)
@@ -174,7 +174,7 @@ void initBuffers()
 	std::vector<vec3> positions;
 	std::vector<vec3> normals;
 	std::vector<GLushort> indices;
-	generateSpherePatched(positions, indices);
+	generateSphereNormal(positions, indices);
 	computeSurfaceNormals(positions, indices, normals, true);
 	elementCount = indices.size();
 	
