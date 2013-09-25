@@ -81,7 +81,7 @@ void update(double time)
 	{
 		int dx = mouseX - lastMouseX;
 		int dy = mouseY - lastMouseY;
-		offsetSpeed += vec2(dx * 0.005f, -dy * 0.005f);
+		offsetSpeed += vec2(dx * 0.005f, -dy * 0.005f) * (1.0f - zoom);
 	}
 
 	int mouseWheel1 = glfwGetMouseWheel();
